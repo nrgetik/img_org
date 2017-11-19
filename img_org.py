@@ -108,8 +108,8 @@ def main(source, destination, yearly, monthly):
                 if not os.path.exists(dst_path):
                     copy2(src_path, dst_path)
                 else:
-                    exit("fatal: somehow, {df} already exists; source is {sp}".format(
-                        df=dst_fn, sp=src_path))
+                    exit("fatal: somehow, {dp} already exists; source is {sp}".format(
+                        dp=dst_path, sp=src_path))
 
 
 if __name__ == "__main__":
