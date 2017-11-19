@@ -3,11 +3,34 @@
 
 import click
 import os
+import subprocess
 from exifread import process_file
 from random import randint
-from re import search, IGNORECASE
+from re import compile, search, IGNORECASE
 from shutil import copy2
 from sys import exit
+
+
+def get_exiftool_creation_date(media_path):
+    try:
+        proc = subprocess.Popen("exiftool -S -t -CreationDate {mp}".format(mp=media_path),
+                                stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                shell=True)
+        out, err = proc.communicate()
+        if not out:
+            proc = subprocess.Popen("exiftool -S -t -DateTimeOriginal {mp}".format(mp=media_path),
+                                    stdin=subprocess.PIPE,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    shell=True)
+            out, err = proc.communicate()
+        if proc.returncode != 0:
+            exit("fatal: {e}".format(e=err))
+    except OSError as e:
+        exit("fatal exception: {e}".format(e=e.strerror))
+    return out.decode("utf-8").strip().split("-")[0].replace(":", "").replace(" ", "_")
 
 
 @click.command()
@@ -34,28 +57,41 @@ def main(source, destination, yearly, monthly):
               "11": "11-November",
               "12": "12-December"}
 
+    ext_p = compile("\.jpg$|\.jpeg$|\.mov$|\.avi$", IGNORECASE)
+    jpg_p = compile("\.jpg$|\.jpeg$", IGNORECASE)
+    avi_p = compile("\.avi$", IGNORECASE)
+    # mov_p = compile("\.mov$", IGNORECASE)
+
     for root, dirs, files in os.walk(src):
         for src_fn in files:
-            if search("\.jpg|\.jpeg", src_fn, IGNORECASE):
+            if ext_p.search(src_fn) and not src_fn.startswith("."):
                 # Reset this variable on each iteration so that
                 # subsequent os.path.join()s operate as intended
                 dst = os.path.normpath(destination)
                 src_path = os.path.join(root, src_fn)
-                with open(src_path) as f:
-                    tags = process_file(f, details=False)
-                    try:
-                        ctime = str(tags["EXIF DateTimeOriginal"])\
-                            .replace(":", "")\
-                            .replace(" ", "_")
-                    except KeyError:
-                        ctime = False
-                    try:
-                        subsecond = tags["EXIF SubSecTimeOriginal"]
-                    except KeyError:
-                        subsecond = False
+                if jpg_p.search(src_fn):
+                    with open(src_path, "rb") as f:
+                        ext = "JPG"
+                        tags = process_file(f, details=False)
+                        try:
+                            ctime = str(tags["EXIF DateTimeOriginal"])\
+                                .replace(":", "")\
+                                .replace(" ", "_")
+                        except KeyError:
+                            ctime = False
+                        try:
+                            subsecond = tags["EXIF SubSecTimeOriginal"]
+                        except KeyError:
+                            subsecond = False
+                else:
+                    ext = "AVI" if avi_p.search(src_fn) else "MOV"
+                    ctime = get_exiftool_creation_date(src_path)
                 if ctime:
-                    dst_fn = "{ct}.{ss}-{x}.JPG".format(
-                        ct=ctime, ss=subsecond if subsecond else randint(100, 999), x=randint(100, 999))
+                    dst_fn = "{ct}.{ss}-{x}.{e}".format(
+                        ct=ctime,
+                        ss=subsecond if subsecond else randint(100, 999),
+                        x=randint(100, 999),
+                        e=ext)
                     if yearly:
                         dst = os.path.normpath(os.path.join(dst, ctime[:4]))
                     elif monthly:
@@ -76,6 +112,7 @@ def main(source, destination, yearly, monthly):
                 else:
                     exit("fatal: somehow, {dfn} already exists; source is {sfn}".format(
                         dfn=dst_fn, sfn=src_fn))
+
 
 if __name__ == "__main__":
     main()
