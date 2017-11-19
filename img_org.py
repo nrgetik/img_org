@@ -13,20 +13,17 @@ from sys import exit
 
 
 def get_exiftool_creation_datetime(media_path):
+    possible_tags = ["CreationDate", "DateTimeOriginal"]
     try:
-        proc = subprocess.Popen("exiftool -S -t -CreationDate {mp}".format(mp=media_path),
-                                stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                shell=True)
-        out, err = proc.communicate()
-        if not out:
-            proc = subprocess.Popen("exiftool -S -t -DateTimeOriginal {mp}".format(mp=media_path),
+        for tag in possible_tags:
+            proc = subprocess.Popen("exiftool -S -t -{t} {mp}".format(mp=media_path, t=tag),
                                     stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
                                     shell=True)
             out, err = proc.communicate()
+            if out:
+                break
         if proc.returncode != 0:
             exit("fatal: {e}".format(e=err))
     except OSError as e:
@@ -101,9 +98,9 @@ def main(source, destination, yearly, monthly):
                         os.makedirs(dst)
                     dst_path = os.path.normpath(os.path.join(dst, dst_fn))
                 else:
-                    print("{sfn} problematic; ctime = {ct}, subsecond = {ss}"
-                          .format(sfn=src_fn, ct=ctime, ss=subsecond))
                     unknown_dst = os.path.normpath(os.path.join(dst, "unknown"))
+                    print("can't find relevant metadata for {sp}, moving to {ud}".format(
+                        sp=src_path, ud=unknown_dst))
                     if not os.path.exists(unknown_dst):
                         os.makedirs(unknown_dst)
                     dst_path = os.path.normpath(
@@ -111,8 +108,8 @@ def main(source, destination, yearly, monthly):
                 if not os.path.exists(dst_path):
                     copy2(src_path, dst_path)
                 else:
-                    exit("fatal: somehow, {dfn} already exists; source is {sfn}".format(
-                        dfn=dst_fn, sfn=src_fn))
+                    exit("fatal: somehow, {df} already exists; source is {sp}".format(
+                        df=dst_fn, sp=src_path))
 
 
 if __name__ == "__main__":
