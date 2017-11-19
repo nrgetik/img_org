@@ -8,10 +8,11 @@ from exifread import process_file
 from random import randint
 from re import compile, search, IGNORECASE
 from shutil import copy2
+from shlex import quote
 from sys import exit
 
 
-def get_exiftool_creation_date(media_path):
+def get_exiftool_creation_datetime(media_path):
     try:
         proc = subprocess.Popen("exiftool -S -t -CreationDate {mp}".format(mp=media_path),
                                 stdin=subprocess.PIPE,
@@ -30,7 +31,7 @@ def get_exiftool_creation_date(media_path):
             exit("fatal: {e}".format(e=err))
     except OSError as e:
         exit("fatal exception: {e}".format(e=e.strerror))
-    return out.decode("utf-8").strip().split("-")[0].replace(":", "").replace(" ", "_")
+    return out.decode("utf-8").strip().split("+")[0].split("-")[0].replace(":", "").replace(" ", "_")
 
 
 @click.command()
@@ -85,7 +86,7 @@ def main(source, destination, yearly, monthly):
                             subsecond = False
                 else:
                     ext = "AVI" if avi_p.search(src_fn) else "MOV"
-                    ctime = get_exiftool_creation_date(src_path)
+                    ctime = get_exiftool_creation_datetime(quote(src_path))
                 if ctime:
                     dst_fn = "{ct}.{ss}-{x}.{e}".format(
                         ct=ctime,
