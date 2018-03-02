@@ -84,6 +84,7 @@ def main(source, destination, yearly, monthly):
                 else:
                     ext = "AVI" if avi_p.search(src_fn) else "MOV"
                     ctime = get_exiftool_creation_datetime(quote(src_path))
+                    subsecond = False
                 if ctime:
                     dst_fn = "{ct}.{ss}-{x}.{e}".format(
                         ct=ctime,
