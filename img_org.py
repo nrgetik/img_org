@@ -99,7 +99,7 @@ def main(source, destination, yearly, monthly):
                         os.makedirs(dst)
                     dst_path = os.path.normpath(os.path.join(dst, dst_fn))
                 else:
-                    unknown_dst = os.path.normpath(os.path.join(dst, "unknown"))
+                    unknown_dst = os.path.normpath(os.path.join(dst, "datetime_unknown"))
                     print("can't find relevant metadata for {sp}, moving to {ud}".format(
                         sp=src_path, ud=unknown_dst))
                     if not os.path.exists(unknown_dst):
