@@ -55,8 +55,9 @@ def main(source, destination, yearly, monthly):
               "11": "11-November",
               "12": "12-December"}
 
-    ext_p = compile("\.jpg$|\.jpeg$|\.mov$|\.avi$", IGNORECASE)
+    ext_p = compile("\.jpg$|\.jpeg$|\.heic$|\.mov$|\.avi$", IGNORECASE)
     jpg_p = compile("\.jpg$|\.jpeg$", IGNORECASE)
+    hei_p = compile("\.heic$", IGNORECASE)
     avi_p = compile("\.avi$", IGNORECASE)
     # mov_p = compile("\.mov$", IGNORECASE)
 
@@ -70,6 +71,20 @@ def main(source, destination, yearly, monthly):
                 if jpg_p.search(src_fn):
                     with open(src_path, "rb") as f:
                         ext = "JPG"
+                        tags = process_file(f, details=False)
+                        try:
+                            ctime = str(tags["EXIF DateTimeOriginal"])\
+                                .replace(":", "")\
+                                .replace(" ", "_")
+                        except KeyError:
+                            ctime = False
+                        try:
+                            subsecond = tags["EXIF SubSecTimeOriginal"]
+                        except KeyError:
+                            subsecond = False
+                elif hei_p.search(src_fn):
+                    with open(src_path, "rb") as f:
+                        ext = "HEIC"
                         tags = process_file(f, details=False)
                         try:
                             ctime = str(tags["EXIF DateTimeOriginal"])\
