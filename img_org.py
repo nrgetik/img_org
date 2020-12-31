@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import click
-import os
+
+import random
+import re
+import shlex
+import shutil
+import sys
 import subprocess
-from exifread import process_file
-from random import randint
-from re import compile, search, IGNORECASE
-from shutil import copy2
-from shlex import quote
-from sys import exit
+import os
+import click
+import exifread
 
 
 def get_exiftool_creation_datetime(media_path):
@@ -25,9 +26,9 @@ def get_exiftool_creation_datetime(media_path):
             if out:
                 break
         if proc.returncode != 0:
-            exit("fatal: {e}".format(e=err))
-    except OSError as e:
-        exit("fatal exception: {e}".format(e=e.strerror))
+            sys.exit("fatal: {e}".format(e=err))
+    except OSError as error:
+        sys.exit("fatal exception: {e}".format(e=error.strerror))
     return out.decode("utf-8").strip().split("+")[0].split("-")[0].replace(":", "").replace(" ", "_")
 
 
@@ -36,11 +37,12 @@ def get_exiftool_creation_datetime(media_path):
 @click.option("-d", "--destination", help="Destination path", required=True)
 @click.option("-y", "--yearly", help="Organize into yearly subfolders", is_flag=True)
 @click.option("-m", "--monthly", help="Organize into monthly subfolders (implies yearly)", is_flag=True)
-def main(source, destination, yearly, monthly):
+@click.option("-x", "--delete", help="Delete original files as they are moved (destructtive)", is_flag=True)
+def main(source, destination, yearly, monthly, delete):
     src = os.path.normpath(source)
     dst = os.path.normpath(destination)
     if not (os.path.isdir(src) and os.path.isdir(dst)):
-        exit("fatal: ensure both source and destination directories exist")
+        sys.exit("fatal: ensure both source and destination directories exist")
 
     months = {"01": "01-January",
               "02": "02-February",
@@ -55,11 +57,12 @@ def main(source, destination, yearly, monthly):
               "11": "11-November",
               "12": "12-December"}
 
-    ext_p = compile("\.jpg$|\.jpeg$|\.heic$|\.mov$|\.avi$", IGNORECASE)
-    jpg_p = compile("\.jpg$|\.jpeg$", IGNORECASE)
-    hei_p = compile("\.heic$", IGNORECASE)
-    avi_p = compile("\.avi$", IGNORECASE)
-    # mov_p = compile("\.mov$", IGNORECASE)
+    ext_p = re.compile(r"\.jpg$|\.jpeg$|\.heic$|\.mov$|\.avi$|\.cr2$|\.nef$|\.dng$", re.IGNORECASE)
+    jpg_p = re.compile(r"\.jpg$|\.jpeg$", re.IGNORECASE)
+    raw_p = re.compile(r"\.cr2$|\.nef$|\.dng$", re.IGNORECASE)
+    hei_p = re.compile(r"\.heic$", re.IGNORECASE)
+    avi_p = re.compile(r"\.avi$", re.IGNORECASE)
+    # mov_p = re.compile("\.mov$", re.IGNORECASE)
 
     for root, dirs, files in os.walk(src):
         for src_fn in files:
@@ -69,9 +72,23 @@ def main(source, destination, yearly, monthly):
                 dst = os.path.normpath(destination)
                 src_path = os.path.join(root, src_fn)
                 if jpg_p.search(src_fn):
-                    with open(src_path, "rb") as f:
+                    with open(src_path, "rb") as fyl:
                         ext = "JPG"
-                        tags = process_file(f, details=False)
+                        tags = exifread.process_file(fyl, details=False)
+                        try:
+                            ctime = str(tags["EXIF DateTimeOriginal"])\
+                                .replace(":", "")\
+                                .replace(" ", "_")
+                        except KeyError:
+                            ctime = False
+                        try:
+                            subsecond = tags["EXIF SubSecTimeOriginal"]
+                        except KeyError:
+                            subsecond = False
+                elif raw_p.search(src_fn):
+                    with open(src_path, "rb") as fyl:
+                        ext = src_fn[-3:].upper()
+                        tags = exifread.process_file(fyl, details=False)
                         try:
                             ctime = str(tags["EXIF DateTimeOriginal"])\
                                 .replace(":", "")\
@@ -83,9 +100,9 @@ def main(source, destination, yearly, monthly):
                         except KeyError:
                             subsecond = False
                 elif hei_p.search(src_fn):
-                    with open(src_path, "rb") as f:
+                    with open(src_path, "rb") as fyl:
                         ext = "HEIC"
-                        tags = process_file(f, details=False)
+                        tags = exifread.process_file(fyl, details=False)
                         try:
                             ctime = str(tags["EXIF DateTimeOriginal"])\
                                 .replace(":", "")\
@@ -98,13 +115,13 @@ def main(source, destination, yearly, monthly):
                             subsecond = False
                 else:
                     ext = "AVI" if avi_p.search(src_fn) else "MOV"
-                    ctime = get_exiftool_creation_datetime(quote(src_path))
+                    ctime = get_exiftool_creation_datetime(shlex.quote(src_path))
                     subsecond = False
                 if ctime:
                     dst_fn = "{ct}.{ss}-{x}.{e}".format(
                         ct=ctime,
-                        ss=subsecond if subsecond else randint(100, 999),
-                        x=randint(100, 999),
+                        ss=subsecond if subsecond else random.randint(100, 999),
+                        x=random.randint(100, 999),
                         e=ext)
                     if yearly:
                         dst = os.path.normpath(os.path.join(dst, ctime[:4]))
@@ -122,9 +139,12 @@ def main(source, destination, yearly, monthly):
                     dst_path = os.path.normpath(
                         os.path.join(unknown_dst, src_fn))
                 if not os.path.exists(dst_path):
-                    copy2(src_path, dst_path)
+                    shutil.copy2(src_path, dst_path)
+                    if delete:
+                        # print("gonna delete {}".format(src_path))
+                        os.remove(src_path)
                 else:
-                    exit("fatal: somehow, {dp} already exists; source is {sp}".format(
+                    sys.exit("fatal: somehow, {dp} already exists; source is {sp}".format(
                         dp=dst_path, sp=src_path))
 
 
