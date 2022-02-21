@@ -57,7 +57,7 @@ def main(source, destination, yearly, monthly, delete):
               "11": "11-November",
               "12": "12-December"}
 
-    ext_p = re.compile(r"\.jpg$|\.jpeg$|\.heic$|\.mov$|\.avi$|\.cr2$|\.nef$|\.dng$", re.IGNORECASE)
+    ext_p = re.compile(r"\.jpg$|\.jpeg$|\.heic$|\.mov$|\.mp4$|\.avi$|\.cr2$|\.nef$|\.dng$", re.IGNORECASE)
     jpg_p = re.compile(r"\.jpg$|\.jpeg$", re.IGNORECASE)
     raw_p = re.compile(r"\.cr2$|\.nef$|\.dng$", re.IGNORECASE)
     hei_p = re.compile(r"\.heic$", re.IGNORECASE)
