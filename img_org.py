@@ -14,7 +14,8 @@ import exifread
 
 
 def get_exiftool_creation_datetime(media_path):
-    possible_tags = ["CreationDate", "DateTimeOriginal"]
+    '''does what the function name says'''
+    possible_tags = ["CreationDate", "DateTimeOriginal", "ProfileDateTime"]
     try:
         for tag in possible_tags:
             proc = subprocess.Popen("exiftool -S -t -{t} {mp}".format(mp=media_path, t=tag),
@@ -29,7 +30,7 @@ def get_exiftool_creation_datetime(media_path):
             sys.exit("fatal: {e}".format(e=err))
     except OSError as error:
         sys.exit("fatal exception: {e}".format(e=error.strerror))
-    return out.decode("utf-8").strip().split("+")[0].split("-")[0].replace(":", "").replace(" ", "_")
+    return out.decode("utf-8").strip().split("+", maxsplit=1)[0].split("-")[0].replace(":", "").replace(" ", "_")
 
 
 @click.command()
@@ -39,6 +40,7 @@ def get_exiftool_creation_datetime(media_path):
 @click.option("-m", "--monthly", help="Organize into monthly subfolders (implies yearly)", is_flag=True)
 @click.option("-x", "--delete", help="Delete original files as they are moved (destructtive)", is_flag=True)
 def main(source, destination, yearly, monthly, delete):
+    '''dis mane'''
     src = os.path.normpath(source)
     dst = os.path.normpath(destination)
     if not (os.path.isdir(src) and os.path.isdir(dst)):
@@ -57,8 +59,9 @@ def main(source, destination, yearly, monthly, delete):
               "11": "11-November",
               "12": "12-December"}
 
-    ext_p = re.compile(r"\.jpg$|\.jpeg$|\.heic$|\.mov$|\.mp4$|\.avi$|\.cr2$|\.nef$|\.dng$", re.IGNORECASE)
+    ext_p = re.compile(r"\.jpg$|\.jpeg$|\.heic$|\.png$|\.mov$|\.mp4$|\.avi$|\.cr2$|\.nef$|\.dng$", re.IGNORECASE)
     jpg_p = re.compile(r"\.jpg$|\.jpeg$", re.IGNORECASE)
+    png_p = re.compile(r"\.png$", re.IGNORECASE)
     raw_p = re.compile(r"\.cr2$|\.nef$|\.dng$", re.IGNORECASE)
     hei_p = re.compile(r"\.heic$", re.IGNORECASE)
     avi_p = re.compile(r"\.avi$", re.IGNORECASE)
@@ -113,6 +116,10 @@ def main(source, destination, yearly, monthly, delete):
                             subsecond = tags["EXIF SubSecTimeOriginal"]
                         except KeyError:
                             subsecond = False
+                elif png_p.search(src_fn):
+                    ext = "PNG"
+                    ctime = get_exiftool_creation_datetime(shlex.quote(src_path))
+                    subsecond = False
                 else:
                     ext = "AVI" if avi_p.search(src_fn) else "MOV"
                     ctime = get_exiftool_creation_datetime(shlex.quote(src_path))
