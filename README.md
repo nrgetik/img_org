@@ -1,5 +1,5 @@
 # img_org
-Trivially reorganizes and renames image (JPEG, HEIC) and some video (AVI, MOV) files chronologically from metadata.
+Trivially reorganizes and renames image (JPEG, HEIC, PNG) and some video (AVI, MOV) files chronologically from metadata.
 
 ## Usage
 ```Usage: img_org.py [OPTIONS]
