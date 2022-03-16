@@ -1,5 +1,5 @@
 # img_org
-Trivially reorganizes and renames image (JPEG, HEIC, PNG) and some video (AVI, MOV) files chronologically from metadata.
+Trivially organizes and renames image (JPEG, HEIC, PNG) and some video (AVI, MOV) files chronologically according to creation date/time available in metadata.
 
 ## Usage
 ```Usage: img_org.py [OPTIONS]
@@ -9,6 +9,11 @@ Options:
   -d, --destination TEXT  Destination path  [required]
   -y, --yearly            Organize into yearly subfolders
   -m, --monthly           Organize into monthly subfolders (implies yearly)
+```
+
+### Install dependencies
+```pip-compile --output-file requirements.txt requirements.in
+pip -i requirements.txt
 ```
 
 ### External requirements
