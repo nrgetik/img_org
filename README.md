@@ -15,7 +15,7 @@ Options:
 ### Install dependencies
 ```
 pip-compile --output-file requirements.txt requirements.in
-pip -i requirements.txt
+pip -r requirements.txt
 ```
 ### External requirements
 Phil Harvey's excellent [ExifTool](https://www.sno.phy.queensu.ca/~phil/exiftool/)
