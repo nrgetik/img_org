@@ -1,8 +1,9 @@
 # img_org
-Trivially organizes and renames image (JPEG, HEIC, PNG) and some video (AVI, MOV) files chronologically according to creation date/time available in metadata.
+Trivially organizes and renames some media files chronologically according to creation date/time available in metadata
 
 ## Usage
-```Usage: img_org.py [OPTIONS]
+```
+Usage: img_org.py [OPTIONS]
 
 Options:
   -s, --source TEXT       Source path  [required]
@@ -12,9 +13,9 @@ Options:
 ```
 
 ### Install dependencies
-```pip-compile --output-file requirements.txt requirements.in
+```
+pip-compile --output-file requirements.txt requirements.in
 pip -i requirements.txt
 ```
-
 ### External requirements
 Phil Harvey's excellent [ExifTool](https://www.sno.phy.queensu.ca/~phil/exiftool/)
