@@ -14,7 +14,20 @@ import click
 
 # (Maybe)
 SUPPORTED_FILETYPES = \
-    ["avi","cr2","dng","heic","jpeg","jpg","mov","mp4","mpeg","mpeg4","nef","png"]
+    ["3gp",
+     "avi",
+     "cr2",
+     "dng",
+     "heic",
+     "jpeg",
+     "jpg",
+     "mov",
+     "mp4",
+     "mpeg",
+     "mpeg4",
+     "mpg",
+     "nef",
+     "png"]
 # Order matters here
 POSSIBLE_TAGS = ["Composite:SubSecDateTimeOriginal", "EXIF:DateTimeOriginal",
                 "EXIF:CreateDate", "QuickTime:CreateDate", "XMP:MetadataDate"]
@@ -87,7 +100,9 @@ def main(source, destination, yearly, monthly):
         if not exists(dst_path):
             copy(src_path, dst_path)
         else:
-            raise SystemExit(f"fatal: {dst_path} already exists; source is {src_path}")
+            randy = randint(100, 999)
+            print(f"{dst_path} already exists, moving to {dst_path}.{randy}\nsource file is {src_path}")
+            copy(src_path, f"{dst_path}.{randy}")
 
 if __name__ == "__main__":
     main()
